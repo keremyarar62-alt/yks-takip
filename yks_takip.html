@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YKS Takip & Analiz Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-200 min-h-screen p-3 sm:p-6 md:p-8">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-center justify-between p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-blue-400">🎯 YKS Performans Paneli</h1>
+        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Denemeler, Çalışma Saatleri, Koçluk Chat & Günlük</p>
+      </div>
+
+      <!-- YKS Geri Sayım Sayaç -->
+      <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">YKS Kalan Süre</span>
+        <div id="yksCountdown" class="text-sm sm:text-base font-black text-blue-600 dark:text-blue-400">Yükleniyor...</div>
+      </div>
+
+      <button id="themeToggle" onclick="toggleTheme()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs sm:text-sm font-semibold transition border border-slate-300 dark:border-slate-600">
+        🌙 / ☀️ Mod Değiştir
+      </button>
+    </header>
+
+    <!-- Navigasyon Tabları -->
+    <div class="flex border-b border-slate-300 dark:border-slate-700 gap-2 overflow-x-auto pb-1 text-sm font-medium">
+      <button onclick="switchTab('deneme')" id="tab-deneme" class="tab-btn px-5 py-2.5 rounded-t-xl bg-blue-600 text-white font-bold transition whitespace-nowrap">📈 Deneme Takibi</button>
+      <button onclick="switchTab('calisma')" id="tab-calisma" class="tab-btn px-5 py-2.5 rounded-t-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition whitespace-nowrap">⏱️ Çalışma Saatleri</button>
+      <button onclick="switchTab('odev')" id="tab-odev" class="tab-btn px-5 py-2.5 rounded-t-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition whitespace-nowrap">💬 Koçluk Chat & Ödevler</button>
+      <button onclick="switchTab('gunluk')" id="tab-gunluk" class="tab-btn px-5 py-2.5 rounded-t-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition whitespace-nowrap">🔒 Günlük & Notlar</button>
+    </div>
+
+    <!-- TAB 1: DENEME TAKİBİ -->
+    <div id="content-deneme" class="space-y-8">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl text-center shadow-md">
+          <span class="text-xs font-semibold text-blue-600 dark:text-blue-400 block">Son TYT Net</span>
+          <span id="statLastTyt" class="text-2xl font-bold">0.00</span>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl text-center shadow-md">
+          <span class="text-xs font-semibold text-blue-600 dark:text-blue-400 block">En Yüksek TYT</span>
+          <span id="statBestTyt" class="text-2xl font-bold text-blue-600 dark:text-blue-400">0.00</span>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl text-center shadow-md">
+          <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 block">Son AYT Net</span>
+          <span id="statLastAyt" class="text-2xl font-bold">0.00</span>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl text-center shadow-md">
+          <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 block">En Yüksek AYT</span>
+          <span id="statBestAyt" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">0.00</span>
+        </div>
+      </div>
+
+      <!-- TYT Bölümü -->
+      <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 sm:p-6 rounded-2xl space-y-6 shadow-md">
+        <h2 class="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
+          <span>TYT Deneme Paneli</span>
+          <span class="text-xs font-normal bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-300 dark:border-blue-700">120 Soru</span>
+        </h2>
+        <form id="tytForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3 items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">Tarih</label><input type="date" id="tytTarih" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">Deneme Adı</label><input type="text" id="tytAd" placeholder="Örn: 3D TG 1" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">TR (40)</label><input type="number" step="0.25" min="0" max="40" id="tytTurkce" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">SOS (20)</label><input type="number" step="0.25" min="0" max="20" id="tytSosyal" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">MAT (40)</label><input type="number" step="0.25" min="0" max="40" id="tytMat" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">FEN (20)</label><input type="number" step="0.25" min="0" max="20" id="tytFen" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs transition h-[35px]">TYT Ekle</button>
+        </form>
+        <p class="text-[11px] text-slate-400 italic text-center">💡 Grafiğin üstündeki ders isimlerine tıklayarak istediğin dersin çizgisini gizleyebilir veya açabilirsin.</p>
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50"><canvas id="tytChart" class="max-h-[350px]"></canvas></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+              <tr><th class="p-2.5">Tarih</th><th class="p-2.5">Deneme</th><th class="p-2.5">TR</th><th class="p-2.5">SOS</th><th class="p-2.5">MAT</th><th class="p-2.5">FEN</th><th class="p-2.5 font-bold text-blue-600 dark:text-blue-400">Toplam</th><th class="p-2.5 text-center">Sil</th></tr>
+            </thead>
+            <tbody id="tytTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- AYT Bölümü -->
+      <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 sm:p-6 rounded-2xl space-y-6 shadow-md">
+        <h2 class="text-xl font-bold text-emerald-600 dark:text-emerald-400 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
+          <span>AYT Deneme Paneli (SAY)</span>
+          <span class="text-xs font-normal bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-700">80 Soru</span>
+        </h2>
+        <form id="aytForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3 items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">Tarih</label><input type="date" id="aytTarih" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">Deneme Adı</label><input type="text" id="aytAd" placeholder="Örn: Özcan Aykın 1" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">MAT (40)</label><input type="number" step="0.25" min="0" max="40" id="aytMat" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">FİZ (14)</label><input type="number" step="0.25" min="0" max="14" id="aytFizik" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">KİM (13)</label><input type="number" step="0.25" min="0" max="13" id="aytKimya" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">BİYO (13)</label><input type="number" step="0.25" min="0" max="13" id="aytBiyo" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"></div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition h-[35px]">AYT Ekle</button>
+        </form>
+        <p class="text-[11px] text-slate-400 italic text-center">💡 Grafiğin üstündeki ders isimlerine tıklayarak istediğin dersin çizgisini gizleyebilir veya açabilirsin.</p>
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50"><canvas id="aytChart" class="max-h-[350px]"></canvas></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+              <tr><th class="p-2.5">Tarih</th><th class="p-2.5">Deneme</th><th class="p-2.5">MAT</th><th class="p-2.5">FİZ</th><th class="p-2.5">KİM</th><th class="p-2.5">BİYO</th><th class="p-2.5 font-bold text-emerald-600 dark:text-emerald-400">Toplam</th><th class="p-2.5 text-center">Sil</th></tr>
+            </thead>
+            <tbody id="aytTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: ÇALIŞMA SAATLERİ -->
+    <div id="content-calisma" class="hidden space-y-6">
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 sm:p-6 rounded-2xl space-y-6">
+        <h2 class="text-xl font-bold text-amber-600 dark:text-amber-400 border-b border-slate-200 dark:border-slate-700 pb-3">Günlük Toplam Çalışma Süresi</h2>
+        
+        <form id="calismaForm" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <input type="date" id="calismaTarih" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Bugün Toplam Kaç Saat Çalıştın?</label>
+            <input type="number" step="0.5" min="0.5" max="24" id="calismaSaat" placeholder="Örn: 8" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
+          </div>
+          <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-xs transition h-[35px]">Günlük Süreyi Kaydet</button>
+        </form>
+
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-3 border-b border-slate-200 dark:border-slate-700 pb-3">
+            <div class="flex gap-2">
+              <button onclick="setCalismaFilter('hafta')" id="btn-filter-hafta" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white transition">Bu Hafta</button>
+              <button onclick="setCalismaFilter('ay')" id="btn-filter-ay" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition">Bu Ay</button>
+            </div>
+            <div class="text-xs font-semibold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 px-3 py-1 rounded-lg border border-amber-300 dark:border-amber-800">
+              Seçili Dönem Toplamı: <span id="calismaTotalHours" class="text-sm font-black">0 Saat</span>
+            </div>
+          </div>
+          <canvas id="calismaChart" class="max-h-[300px]"></canvas>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th class="p-2.5">Tarih</th>
+                <th class="p-2.5 font-bold text-amber-600 dark:text-amber-400">Çalışma Süresi</th>
+                <th class="p-2.5 text-center">Sil</th>
+              </tr>
+            </thead>
+            <tbody id="calismaTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: KOÇLUK WHATSAPP SOHBETİ & ÖDEVLER -->
+    <div id="content-odev" class="hidden space-y-4">
+      <div class="bg-slate-200 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col h-[650px]">
+        
+        <!-- WhatsApp Header -->
+        <div class="bg-emerald-700 text-white p-3.5 flex justify-between items-center shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-lg border border-emerald-300">🎓</div>
+            <div>
+              <h3 class="font-bold text-sm leading-tight">Koçluk & Ödev Sohbeti</h3>
+              <span class="text-[10px] text-emerald-200">Çevrimiçi | Takip Arayüzü</span>
+            </div>
+          </div>
+          <div class="text-xs bg-emerald-800/80 px-3 py-1 rounded-full border border-emerald-600">Ödev Mesajlaşması</div>
+        </div>
+
+        <!-- Chat Mesaj Alanı -->
+        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+        </div>
+
+        <!-- Yanıtlama (Reply) Preview Kutusu -->
+        <div id="replyPreview" class="hidden bg-slate-100 dark:bg-slate-800 p-2.5 border-t border-slate-300 dark:border-slate-700 flex justify-between items-center text-xs">
+          <div class="border-l-4 border-emerald-500 pl-2">
+            <span id="replySender" class="font-bold text-emerald-600 dark:text-emerald-400 block text-[11px]"></span>
+            <span id="replyText" class="text-slate-600 dark:text-slate-300 truncate max-w-md block"></span>
+          </div>
+          <button onclick="cancelReply()" class="text-slate-400 hover:text-red-500 font-bold px-2 text-sm">✕</button>
+        </div>
+
+        <!-- Input Gönderme Alanı -->
+        <form id="chatForm" class="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
+          
+          <select id="chatSenderSelect" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold rounded-xl p-2.5 outline-none text-slate-700 dark:text-slate-200">
+            <option value="siz">Siz (Öğrenci)</option>
+            <option value="koc">Koç (Atanan Ödev)</option>
+          </select>
+
+          <input type="text" id="chatInput" placeholder="Bir mesaj yazın veya ödev tanımlayın..." required class="flex-1 p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-emerald-500">
+          
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2.5 rounded-xl font-bold transition flex items-center justify-center w-10 h-10">
+            ➤
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- TAB 4: GÜNLÜK & NOTLAR (ŞİFRELİ) -->
+    <div id="content-gunluk" class="hidden space-y-6">
+      <div id="gunlukKilit" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 rounded-2xl text-center max-w-md mx-auto space-y-4 shadow-xl">
+        <div class="text-4xl">🔒</div>
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">Günlük Alanı Kilitli</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Notlarınızı ve medyanızı görmek için parolayı girin.</p>
+        <input type="password" id="gunlukParolaInput" placeholder="Parola" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-center font-bold tracking-widest text-lg outline-none focus:border-purple-500">
+        <button onclick="unlockGunluk()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl text-sm transition">Kilidi Aç</button>
+        <p id="kilitHata" class="text-xs text-red-500 hidden">Hatalı parola!</p>
+      </div>
+
+      <div id="gunlukIcerik" class="hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 sm:p-6 rounded-2xl space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
+          <h2 class="text-xl font-bold text-purple-600 dark:text-purple-400">Çalışma Günlüğü & Medya Notları</h2>
+          <button onclick="lockGunluk()" class="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 px-3 py-1.5 rounded-lg">🔒 Kilitle</button>
+        </div>
+        
+        <form id="gunlukForm" class="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+              <input type="date" id="gunlukTarih" required class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Günün Modu</label>
+              <select id="gunlukMod" class="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
+                <option value="🔥 Çok Verimli">🔥 Çok Verimli</option>
+                <option value="✅ Normal / Stabil">✅ Normal / Stabil</option>
+                <option value="⚠️ Odaklanma Sorunu Var">⚠️ Odaklanma Sorunu Var</option>
+                <option value="😴 Yorgun / Düşük Verim">😴 Yorgun / Düşük Verim</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <textarea id="gunlukNot" rows="4" placeholder="Günün nasıl geçti? Detaylıca yaz..." required class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-purple-500 leading-relaxed"></textarea>
+          </div>
+          <div>
+            <input type="file" id="gunlukMedya" accept="image/*,video/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-100 dark:file:bg-purple-900/50 file:text-purple-700 dark:file:text-purple-300">
+          </div>
+          <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-lg text-xs transition">Kaydet</button>
+        </form>
+
+        <div id="gunlukList" class="space-y-4"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // LocalStorage Verileri
+    let tytData = JSON.parse(localStorage.getItem('yks_tyt_v2')) || [];
+    let aytData = JSON.parse(localStorage.getItem('yks_ayt_v2')) || [];
+    let calismaData = JSON.parse(localStorage.getItem('yks_calisma_v3')) || [];
+    let chatData = JSON.parse(localStorage.getItem('yks_chat_v1')) || [
+      { id: 1, sender: 'koc', text: 'Selam! Bu hafta 3D AYT Fizik 2 test + 100 Paragraf ödevin var.', time: '10:00', done: false, replyTo: null }
+    ];
+    let gunlukData = JSON.parse(localStorage.getItem('yks_gunluk_v3')) || [];
+    
+    let calismaFilterMode = 'hafta';
+    let selectedReplyMsg = null;
+    let tytChart, aytChart, calismaChart;
+
+    function autoThemeByTime() {
+      const currentHour = new Date().getHours();
+      if (currentHour >= 7 && currentHour < 18) {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function updateYksCountdown() {
+      const yksExamDate = new Date('2027-06-20T10:15:00').getTime();
+      const now = new Date().getTime();
+      const diff = yksExamDate - now;
+
+      if (diff <= 0) {
+        document.getElementById('yksCountdown').innerText = "Sınav Günü Geldi!";
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('yksCountdown').innerText = `${days} Gün ${hours}s ${minutes}d ${seconds}sn`;
+    }
+    setInterval(updateYksCountdown, 1000);
+
+    function switchTab(tab) {
+      document.getElementById('content-deneme').classList.add('hidden');
+      document.getElementById('content-calisma').classList.add('hidden');
+      document.getElementById('content-odev').classList.add('hidden');
+      document.getElementById('content-gunluk').classList.add('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+      });
+
+      document.getElementById('content-' + tab).classList.remove('hidden');
+      const activeBtn = document.getElementById('tab-' + tab);
+      activeBtn.classList.add('bg-blue-600', 'text-white');
+      activeBtn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+    }
+
+    function unlockGunluk() {
+      if (document.getElementById('gunlukParolaInput').value === '118975') {
+        document.getElementById('gunlukKilit').classList.add('hidden');
+        document.getElementById('gunlukIcerik').classList.remove('hidden');
+        document.getElementById('kilitHata').classList.add('hidden');
+        document.getElementById('gunlukParolaInput').value = '';
+      } else {
+        document.getElementById('kilitHata').classList.remove('hidden');
+      }
+    }
+
+    function lockGunluk() {
+      document.getElementById('gunlukKilit').classList.remove('hidden');
+      document.getElementById('gunlukIcerik').classList.add('hidden');
+    }
+
+    // GRAFİK BAŞLATMA (HER DERS İÇİN AYRI ÇİZGİ SEÇENEĞİ)
+    function initCharts() {
+      const ctxTYT = document.getElementById('tytChart').getContext('2d');
+      tytChart = new Chart(ctxTYT, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { boxWidth: 12, padding: 15, font: { size: 11, weight: 'bold' } }
+            }
+          },
+          scales: { y: { beginAtZero: true, max: 120 } }
+        }
+      });
+
+      const ctxAYT = document.getElementById('aytChart').getContext('2d');
+      aytChart = new Chart(ctxAYT, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { boxWidth: 12, padding: 15, font: { size: 11, weight: 'bold' } }
+            }
+          },
+          scales: { y: { beginAtZero: true, max: 80 } }
+        }
+      });
+
+      const ctxCalisma = document.getElementById('calismaChart').getContext('2d');
+      calismaChart = new Chart(ctxCalisma, {
+        type: 'bar',
+        data: { labels: [], datasets: [] },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    function setCalismaFilter(mode) {
+      calismaFilterMode = mode;
+      updateCalismaChart();
+    }
+
+    function updateCalismaChart() {
+      const now = new Date();
+      let filteredData = [];
+
+      if (calismaFilterMode === 'hafta') {
+        const last7Days = new Date();
+        last7Days.setDate(now.getDate() - 7);
+        filteredData = calismaData.filter(d => new Date(d.tarih) >= last7Days);
+      } else {
+        const last30Days = new Date();
+        last30Days.setDate(now.getDate() - 30);
+        filteredData = calismaData.filter(d => new Date(d.tarih) >= last30Days);
+      }
+
+      filteredData.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
+      const totalHours = filteredData.reduce((acc, curr) => acc + parseFloat(curr.saat), 0);
+      document.getElementById('calismaTotalHours').innerText = `${totalHours.toFixed(1)} Saat`;
+
+      calismaChart.data.labels = filteredData.map(d => d.tarih);
+      calismaChart.data.datasets = [{
+        label: 'Çalışma Süresi (Saat)',
+        data: filteredData.map(d => d.saat),
+        backgroundColor: '#f59e0b',
+        borderRadius: 6
+      }];
+      calismaChart.update();
+    }
+
+    // WHATSAPP CHAT İŞLEMLERİ
+    function selectMsgForReply(id) {
+      const msg = chatData.find(m => m.id === id);
+      if (!msg) return;
+      selectedReplyMsg = msg;
+      document.getElementById('replySender').innerText = msg.sender === 'koc' ? 'Koç' : 'Siz';
+      document.getElementById('replyText').innerText = msg.text;
+      document.getElementById('replyPreview').classList.remove('hidden');
+    }
+
+    function cancelReply() {
+      selectedReplyMsg = null;
+      document.getElementById('replyPreview').classList.add('hidden');
+    }
+
+    function toggleChatDone(id) {
+      const msg = chatData.find(m => m.id === id);
+      if (msg && msg.sender === 'koc') {
+        msg.done = !msg.done;
+        updateUI();
+      }
+    }
+
+    function renderChat() {
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = chatData.map(msg => {
+        const isSiz = msg.sender === 'siz';
+        
+        let replyHTML = '';
+        if (msg.replyTo) {
+          replyHTML = `
+            <div class="bg-black/10 dark:bg-white/10 border-l-4 border-emerald-500 p-1.5 rounded text-[11px] mb-1.5">
+              <span class="font-bold block ${isSiz ? 'text-emerald-900 dark:text-emerald-200' : 'text-emerald-600 dark:text-emerald-400'}">${msg.replyTo.sender === 'koc' ? 'Koç' : 'Siz'}</span>
+              <span class="truncate block opacity-80">${msg.replyTo.text}</span>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="flex ${isSiz ? 'justify-end' : 'justify-start'} group">
+            <div class="relative max-w-[80%] sm:max-w-[65%] rounded-2xl p-3 shadow-md text-xs leading-relaxed ${
+              isSiz 
+                ? 'bg-emerald-600 text-white rounded-tr-none' 
+                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700'
+            }">
+              ${replyHTML}
+              <p class="${msg.done ? 'line-through opacity-60' : ''}">${msg.text}</p>
+              
+              <div class="flex items-center justify-between gap-3 mt-1.5 pt-1 border-t border-black/10 dark:border-white/10 text-[10px] opacity-75">
+                <span>${msg.time}</span>
+                <div class="flex items-center gap-2">
+                  ${msg.sender === 'koc' ? `<button onclick="toggleChatDone(${msg.id})" class="hover:underline font-bold">${msg.done ? '✅ Yapıldı' : '⏳ Yapılmadı'}</button>` : ''}
+                  <button onclick="selectMsgForReply(${msg.id})" class="hover:underline font-bold">💬 Yanıtla</button>
+                  <button onclick="deleteData('chat', ${msg.id})" class="hover:text-red-400 font-bold">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function updateUI() {
+      localStorage.setItem('yks_tyt_v2', JSON.stringify(tytData));
+      localStorage.setItem('yks_ayt_v2', JSON.stringify(aytData));
+      localStorage.setItem('yks_calisma_v3', JSON.stringify(calismaData));
+      localStorage.setItem('yks_chat_v1', JSON.stringify(chatData));
+      localStorage.setItem('yks_gunluk_v3', JSON.stringify(gunlukData));
+
+      if (tytData.length > 0) {
+        document.getElementById('statLastTyt').innerText = tytData[tytData.length - 1].toplam;
+        document.getElementById('statBestTyt').innerText = Math.max(...tytData.map(d => parseFloat(d.toplam))).toFixed(2);
+      }
+      if (aytData.length > 0) {
+        document.getElementById('statLastAyt').innerText = aytData[aytData.length - 1].toplam;
+        document.getElementById('statBestAyt').innerText = Math.max(...aytData.map(d => parseFloat(d.toplam))).toFixed(2);
+      }
+
+      // Tablolar
+      document.getElementById('tytTableBody').innerHTML = tytData.map((item, i) => `
+        <tr><td class="p-2.5">${item.tarih}</td><td class="p-2.5 font-semibold">${item.ad}</td><td class="p-2.5">${item.turkce}</td><td class="p-2.5">${item.sosyal}</td><td class="p-2.5">${item.mat}</td><td class="p-2.5">${item.fen}</td><td class="p-2.5 font-bold text-blue-600">${item.toplam}</td><td class="p-2.5 text-center"><button onclick="deleteData('tyt', ${i})" class="text-red-500 font-bold">✕</button></td></tr>
+      `).join('');
+
+      document.getElementById('aytTableBody').innerHTML = aytData.map((item, i) => `
+        <tr><td class="p-2.5">${item.tarih}</td><td class="p-2.5 font-semibold">${item.ad}</td><td class="p-2.5">${item.mat}</td><td class="p-2.5">${item.fizik}</td><td class="p-2.5">${item.kimya}</td><td class="p-2.5">${item.biyo}</td><td class="p-2.5 font-bold text-emerald-600">${item.toplam}</td><td class="p-2.5 text-center"><button onclick="deleteData('ayt', ${i})" class="text-red-500 font-bold">✕</button></td></tr>
+      `).join('');
+
+      document.getElementById('calismaTableBody').innerHTML = [...calismaData].reverse().map((item, i) => `
+        <tr><td class="p-2.5">${item.tarih}</td><td class="p-2.5 font-bold text-amber-600">${item.saat} Saat</td><td class="p-2.5 text-center"><button onclick="deleteData('calisma', ${calismaData.length - 1 - i})" class="text-red-500 font-bold">✕</button></td></tr>
+      `).join('');
+
+      // Günlük Liste
+      document.getElementById('gunlukList').innerHTML = gunlukData.map((item, i) => {
+        let medyaHTML = '';
+        if (item.medya) {
+          if (item.medyaType.startsWith('image/')) medyaHTML = `<img src="${item.medya}" class="mt-3 rounded-xl max-h-64 object-cover border">`;
+          else if (item.medyaType.startsWith('video/')) medyaHTML = `<video src="${item.medya}" controls class="mt-3 rounded-xl max-h-64 w-full border"></video>`;
+        }
+        return `
+          <div class="p-4 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2">
+            <div class="flex justify-between items-center text-xs text-slate-500"><span class="font-bold text-purple-600">${item.tarih}</span><span class="bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded">${item.mod}</span></div>
+            <p class="text-xs whitespace-pre-line leading-relaxed">${item.not}</p>
+            ${medyaHTML}
+            <div class="text-right pt-2"><button onclick="deleteData('gunluk', ${i})" class="text-xs text-red-500 hover:underline">Sil</button></div>
+          </div>
+        `;
+      }).join('');
+
+      renderChat();
+
+      // TYT GRAFİĞİ DERS DERS ÇİZGİLERLE GÜNCELLEME
+      tytChart.data.labels = tytData.map(d => d.ad);
+      tytChart.data.datasets = [
+        { label: 'Türkçe', data: tytData.map(d => d.turkce), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.2 },
+        { label: 'Sosyal', data: tytData.map(d => d.sosyal), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.2 },
+        { label: 'Matematik', data: tytData.map(d => d.mat), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.2 },
+        { label: 'Fen', data: tytData.map(d => d.fen), borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.2 },
+        { label: 'TYT Toplam Net', data: tytData.map(d => d.toplam), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6', borderWidth: 3, tension: 0.2 }
+      ];
+      tytChart.update();
+
+      // AYT GRAFİĞİ DERS DERS ÇİZGİLERLE GÜNCELLEME
+      aytChart.data.labels = aytData.map(d => d.ad);
+      aytChart.data.datasets = [
+        { label: 'Matematik', data: aytData.map(d => d.mat), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.2 },
+        { label: 'Fizik', data: aytData.map(d => d.fizik), borderColor: '#06b6d4', backgroundColor: '#06b6d4', tension: 0.2 },
+        { label: 'Kimya', data: aytData.map(d => d.kimya), borderColor: '#ec4899', backgroundColor: '#ec4899', tension: 0.2 },
+        { label: 'Biyoloji', data: aytData.map(d => d.biyo), borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.2 },
+        { label: 'AYT Toplam Net', data: aytData.map(d => d.toplam), borderColor: '#059669', backgroundColor: '#059669', borderWidth: 3, tension: 0.2 }
+      ];
+      aytChart.update();
+
+      updateCalismaChart();
+    }
+
+    // Forms
+    document.getElementById('tytForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const tr = parseFloat(document.getElementById('tytTurkce').value), sos = parseFloat(document.getElementById('tytSosyal').value), mat = parseFloat(document.getElementById('tytMat').value), fen = parseFloat(document.getElementById('tytFen').value);
+      tytData.push({ tarih: document.getElementById('tytTarih').value, ad: document.getElementById('tytAd').value, turkce: tr, sosyal: sos, mat: mat, fen: fen, toplam: (tr+sos+mat+fen).toFixed(2) });
+      document.getElementById('tytForm').reset();
+      updateUI();
+    });
+
+    document.getElementById('aytForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mat = parseFloat(document.getElementById('aytMat').value), fiz = parseFloat(document.getElementById('aytFizik').value), kim = parseFloat(document.getElementById('aytKimya').value), bio = parseFloat(document.getElementById('aytBiyo').value);
+      aytData.push({ tarih: document.getElementById('aytTarih').value, ad: document.getElementById('aytAd').value, mat: mat, fizik: fiz, kimya: kim, biyo: bio, toplam: (mat+fiz+kim+bio).toFixed(2) });
+      document.getElementById('aytForm').reset();
+      updateUI();
+    });
+
+    document.getElementById('calismaForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      calismaData.push({ tarih: document.getElementById('calismaTarih').value, saat: document.getElementById('calismaSaat').value });
+      document.getElementById('calismaForm').reset();
+      updateUI();
+    });
+
+    document.getElementById('chatForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const sender = document.getElementById('chatSenderSelect').value;
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      chatData.push({
+        id: Date.now(),
+        sender: sender,
+        text: input.value,
+        time: timeStr,
+        done: false,
+        replyTo: selectedReplyMsg ? { sender: selectedReplyMsg.sender, text: selectedReplyMsg.text } : null
+      });
+
+      input.value = '';
+      cancelReply();
+      updateUI();
+    });
+
+    document.getElementById('gunlukForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const file = document.getElementById('gunlukMedya').files[0];
+      const saveEntry = (medya = null, type = null) => {
+        gunlukData.push({ tarih: document.getElementById('gunlukTarih').value, mod: document.getElementById('gunlukMod').value, not: document.getElementById('gunlukNot').value, medya: medya, medyaType: type });
+        document.getElementById('gunlukForm').reset();
+        updateUI();
+      };
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => saveEntry(e.target.result, file.type);
+        reader.readAsDataURL(file);
+      } else saveEntry();
+    });
+
+    function deleteData(type, index) {
+      if(type === 'tyt') tytData.splice(index, 1);
+      if(type === 'ayt') aytData.splice(index, 1);
+      if(type === 'calisma') calismaData.splice(index, 1);
+      if(type === 'chat') chatData = chatData.filter(m => m.id !== index);
+      if(type === 'gunluk') gunlukData.splice(index, 1);
+      updateUI();
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('tytTarih').value = today;
+    document.getElementById('aytTarih').value = today;
+    document.getElementById('calismaTarih').value = today;
+    document.getElementById('gunlukTarih').value = today;
+
+    window.onload = () => {
+      autoThemeByTime();
+      updateYksCountdown();
+      initCharts();
+      updateUI();
+    };
+  </script>
+</body>
+</html>
